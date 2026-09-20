@@ -7,6 +7,11 @@ import {
   saveCleanResult,
 } from './_lib/uploads'
 
+// Hobby (free) plan max duration is 300s with fluid compute; 60s stays within that limit.
+export const config = {
+  maxDuration: 60,
+}
+
 const MAX_BODY_BYTES = 4_000_000
 
 function jsonResponse(
@@ -64,6 +69,7 @@ async function handleProcessUpload(request: Request): Promise<Response> {
     return jsonResponse(405, { error: 'Method not allowed' }, { Allow: 'POST' })
   }
 
+  const startedAt = Date.now()
   const body = await readBodyText(request)
   if (!body.ok) return body.response
 
@@ -75,6 +81,9 @@ async function handleProcessUpload(request: Request): Promise<Response> {
     if (existing?.status === 'completed') {
       const summary = await getUploadSummary(existing.id)
       if (summary) {
+        console.log(
+          `process-upload: clean=0ms save=0ms total=${Date.now() - startedAt}ms rows=0 alreadyProcessed=true`,
+        )
         return jsonResponse(200, {
           alreadyProcessed: true,
           uploadId: existing.id,
@@ -85,12 +94,20 @@ async function handleProcessUpload(request: Request): Promise<Response> {
       await deleteUpload(existing.id)
     }
 
+    const cleanStarted = Date.now()
     const result = cleanCsv(body.text)
+    const cleanMs = Date.now() - cleanStarted
+
+    const saveStarted = Date.now()
     const saved = await saveCleanResult({
       filename,
       fileSha256: hash,
       result,
     })
+    const saveMs = Date.now() - saveStarted
+    console.log(
+      `process-upload: clean=${cleanMs}ms save=${saveMs}ms total=${Date.now() - startedAt}ms rows=${result.checks.length}`,
+    )
 
     if (saved.alreadyProcessed) {
       return jsonResponse(200, {

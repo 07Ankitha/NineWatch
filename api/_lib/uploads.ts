@@ -2,7 +2,7 @@ import type { PoolClient } from '@neondatabase/serverless'
 import type { CleanCheck, CleaningIssue, CleaningResult } from './cleaning'
 import { getPool } from './db'
 
-const BATCH_SIZE = 1000
+const BATCH_SIZE = 5000
 
 export type UploadRecord = {
   id: number
@@ -135,33 +135,56 @@ async function insertChecks(
   uploadId: number,
   checks: CleanCheck[],
 ): Promise<void> {
+  if (checks.length === 0) return
+
   for (const batch of chunk(checks, BATCH_SIZE)) {
-    const values: unknown[] = []
-    const placeholders: string[] = []
-    let param = 1
+    const serviceIds: string[] = []
+    const serviceNames: string[] = []
+    const checkedAt: string[] = []
+    const statusCodes: number[] = []
+    const isSuccess: boolean[] = []
+    const latencyMs: Array<number | null> = []
+    const agents: string[] = []
+    const regions: string[] = []
+
     for (const row of batch) {
-      placeholders.push(
-        `($${param++}, $${param++}, $${param++}, $${param++}, $${param++}, $${param++}, $${param++}, $${param++}, $${param++})`,
-      )
-      values.push(
-        uploadId,
-        row.serviceId,
-        row.serviceName,
-        row.checkedAt.toISOString(),
-        row.statusCode,
-        row.isSuccess,
-        row.latencyMs,
-        row.agent,
-        row.region,
-      )
+      serviceIds.push(row.serviceId)
+      serviceNames.push(row.serviceName)
+      checkedAt.push(row.checkedAt.toISOString())
+      statusCodes.push(row.statusCode)
+      isSuccess.push(row.isSuccess)
+      latencyMs.push(row.latencyMs)
+      agents.push(row.agent)
+      regions.push(row.region)
     }
 
     await client.query(
       `INSERT INTO checks (
          upload_id, service_id, service_name, checked_at, status_code,
          is_success, latency_ms, agent, region
-       ) VALUES ${placeholders.join(', ')}`,
-      values,
+       )
+       SELECT $1, *
+       FROM UNNEST(
+         $2::text[],
+         $3::text[],
+         $4::timestamptz[],
+         $5::smallint[],
+         $6::boolean[],
+         $7::numeric[],
+         $8::text[],
+         $9::text[]
+       )`,
+      [
+        uploadId,
+        serviceIds,
+        serviceNames,
+        checkedAt,
+        statusCodes,
+        isSuccess,
+        latencyMs,
+        agents,
+        regions,
+      ],
     )
   }
 }
@@ -171,29 +194,36 @@ async function insertIssues(
   uploadId: number,
   issues: CleaningIssue[],
 ): Promise<void> {
+  if (issues.length === 0) return
+
   for (const batch of chunk(issues, BATCH_SIZE)) {
-    const values: unknown[] = []
-    const placeholders: string[] = []
-    let param = 1
+    const issueTypes: string[] = []
+    const actions: string[] = []
+    const sourceRows: Array<number | null> = []
+    const rawRows: Array<string | null> = []
+    const details: Array<string | null> = []
+
     for (const issue of batch) {
-      placeholders.push(
-        `($${param++}, $${param++}, $${param++}, $${param++}, $${param++}::jsonb, $${param++})`,
-      )
-      values.push(
-        uploadId,
-        issue.issueType,
-        issue.action,
-        issue.sourceRow ?? null,
-        issue.rawRow === undefined ? null : JSON.stringify(issue.rawRow),
-        issueDetail(issue),
-      )
+      issueTypes.push(issue.issueType)
+      actions.push(issue.action)
+      sourceRows.push(issue.sourceRow ?? null)
+      rawRows.push(issue.rawRow === undefined ? null : JSON.stringify(issue.rawRow))
+      details.push(issueDetail(issue))
     }
 
     await client.query(
       `INSERT INTO data_issues (
          upload_id, issue_type, action, source_row, raw_row, detail
-       ) VALUES ${placeholders.join(', ')}`,
-      values,
+       )
+       SELECT $1, issue_type, action, source_row, raw_row::jsonb, detail
+       FROM UNNEST(
+         $2::text[],
+         $3::text[],
+         $4::int[],
+         $5::text[],
+         $6::text[]
+       ) AS t(issue_type, action, source_row, raw_row, detail)`,
+      [uploadId, issueTypes, actions, sourceRows, rawRows, details],
     )
   }
 }
@@ -289,24 +319,57 @@ async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promi
   }
 }
 
+export type SaveTimings = {
+  connect: number
+  insertUploads: number
+  insertChecks: number
+  insertIssues: number
+  updateUploads: number
+  commit: number
+  total: number
+}
+
 export async function saveCleanResult(options: {
   filename: string
   fileSha256: string
   result: CleaningResult
-}): Promise<SavedUpload> {
+}): Promise<SavedUpload & { timings: SaveTimings }> {
   const { filename, fileSha256, result } = options
   const summary = serializeSummary(result)
+  const timings: SaveTimings = {
+    connect: 0,
+    insertUploads: 0,
+    insertChecks: 0,
+    insertIssues: 0,
+    updateUploads: 0,
+    commit: 0,
+    total: 0,
+  }
+  const saveStarted = Date.now()
 
   try {
-    return await withTransaction(async (client) => {
+    let stageAt = Date.now()
+    const saved = await withTransaction(async (client) => {
+      timings.connect = Date.now() - stageAt
+
+      stageAt = Date.now()
       const uploadId = await insertUpload(
         client,
         filename,
         fileSha256,
         result.summary.rowsReceived,
       )
+      timings.insertUploads = Date.now() - stageAt
+
+      stageAt = Date.now()
       await insertChecks(client, uploadId, result.checks)
+      timings.insertChecks = Date.now() - stageAt
+
+      stageAt = Date.now()
       await insertIssues(client, uploadId, result.issues)
+      timings.insertIssues = Date.now() - stageAt
+
+      stageAt = Date.now()
       await client.query(
         `UPDATE uploads
          SET status = 'completed',
@@ -323,6 +386,8 @@ export async function saveCleanResult(options: {
           summary.dataEnd,
         ],
       )
+      timings.updateUploads = Date.now() - stageAt
+
       return {
         alreadyProcessed: false,
         uploadId,
@@ -330,6 +395,15 @@ export async function saveCleanResult(options: {
         summary,
       }
     })
+    timings.commit = Date.now() - saveStarted - (
+      timings.connect +
+      timings.insertUploads +
+      timings.insertChecks +
+      timings.insertIssues +
+      timings.updateUploads
+    )
+    timings.total = Date.now() - saveStarted
+    return { ...saved, timings }
   } catch (error) {
     if (isFileSha256Conflict(error)) {
       const existing = await findUploadByHash(fileSha256)
@@ -341,6 +415,7 @@ export async function saveCleanResult(options: {
             uploadId: existing.id,
             filename: existing.filename,
             summary: existingSummary,
+            timings: { ...timings, total: Date.now() - saveStarted },
           }
         }
       }
