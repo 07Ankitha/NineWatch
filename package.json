@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "migrate": "tsx db/migrate.ts",
-    "migrate:reset": "tsx db/reset.ts"
+    "migrate:reset": "tsx db/reset.ts",
+    "upload:sample": "tsx scripts/upload-sample.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
