@@ -1,1 +1,9 @@
-// Placeholder for the Neon PostgreSQL client.
+import { neon } from '@neondatabase/serverless'
+
+export function getDb() {
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is not set. Add it to the environment before querying the database.')
+  }
+  return neon(databaseUrl)
+}
