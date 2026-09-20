@@ -35,3 +35,6 @@ Desktop.ini
 *.sln
 *.sw?
 *~
+
+.vercel
+.env*
