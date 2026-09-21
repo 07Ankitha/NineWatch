@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "vercel dev",
-    "build": "tsc -b && vite build",
+    "typecheck:api": "tsc -p api/tsconfig.json --noEmit",
+    "build": "npm run typecheck:api && tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "migrate": "tsx db/migrate.ts",

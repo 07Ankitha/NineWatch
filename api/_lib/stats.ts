@@ -1,5 +1,5 @@
-import { CHECK_INTERVAL_MINUTES, SLA_TARGET_PCT } from './config'
-import { getDb } from './db'
+import { CHECK_INTERVAL_MINUTES, SLA_TARGET_PCT } from './config.js'
+import { getDb } from './db.js'
 
 export type StatsUpload = {
   id: number
@@ -332,13 +332,13 @@ export function parseUploadIdParam(raw: string | null): 'missing' | 'invalid' | 
 
 async function latestCompletedUploadId(): Promise<number | null> {
   const sql = getDb()
-  const rows = await sql<Record<string, unknown>>`
+  const rows = (await sql`
     SELECT id
     FROM uploads
     WHERE status = 'completed'
     ORDER BY uploaded_at DESC, id DESC
     LIMIT 1
-  `
+  `) as Array<Record<string, unknown>>
   const id = rows[0]?.id
   return id == null ? null : toNumber(id)
 }
@@ -353,39 +353,39 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
 
   const sql = getDb()
   const [uploadRows, serviceRows, outageRows, incidentRows, errorRows, dailyRows, issueRows] =
-    await Promise.all([
-      sql<Record<string, unknown>>`
+    (await Promise.all([
+      sql`
         SELECT
           id, filename, uploaded_at, data_start, data_end,
           rows_received, rows_kept, rows_dropped
         FROM uploads
         WHERE id = ${id}
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT *
         FROM v_service_availability
         WHERE upload_id = ${id}
         ORDER BY service_id
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT *
         FROM v_outages
         WHERE upload_id = ${id}
         ORDER BY started_at DESC
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT *
         FROM v_incidents
         WHERE upload_id = ${id}
         ORDER BY started_at DESC
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT *
         FROM v_error_breakdown
         WHERE upload_id = ${id}
         ORDER BY service_id, status_code
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT
           service_id,
           day::text AS day,
@@ -396,7 +396,7 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
         WHERE upload_id = ${id}
         ORDER BY service_id, day
       `,
-      sql<Record<string, unknown>>`
+      sql`
         SELECT
           issue_type,
           COUNT(*)::int AS occurrences,
@@ -405,7 +405,7 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
         WHERE upload_id = ${id}
         GROUP BY issue_type
       `,
-    ])
+    ])) as Array<Array<Record<string, unknown>>>
 
   if (uploadRows.length === 0) return { status: 'not_found' }
 

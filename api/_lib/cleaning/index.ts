@@ -1,9 +1,9 @@
-export { cleanCsv } from './clean'
-export { ValidationError } from './parseCsv'
+export { cleanCsv } from './clean.js'
+export { ValidationError } from './parseCsv.js'
 export type {
   CleanCheck,
   CleaningIssue,
   CleaningResult,
   CleaningSummary,
   RawRow,
-} from './types'
+} from './types.js'

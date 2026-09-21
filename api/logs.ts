@@ -1,4 +1,4 @@
-import { getLogs, parseLogsQuery } from './_lib/logs'
+import { getLogs, parseLogsQuery } from './_lib/logs.js'
 
 function jsonResponse(
   status: number,
@@ -22,7 +22,7 @@ async function handleLogs(request: Request): Promise<Response> {
 
   try {
     const parsed = parseLogsQuery(request.url)
-    if (!parsed.ok) {
+    if (parsed.ok === false) {
       return jsonResponse(400, { error: parsed.error })
     }
 

@@ -1,4 +1,4 @@
-import type { ParsedLatency, ParsedTimestamp, TimestampKind } from './types'
+import type { ParsedLatency, ParsedTimestamp, TimestampKind } from './types.js'
 
 const MIN_YEAR = 2000
 const MAX_YEAR = 2100

@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
-import { cleanCsv, ValidationError } from './_lib/cleaning'
+import { cleanCsv, ValidationError } from './_lib/cleaning/index.js'
 import {
   deleteUpload,
   findUploadByHash,
   getUploadSummary,
   saveCleanResult,
-} from './_lib/uploads'
+} from './_lib/uploads.js'
 
 // Hobby (free) plan max duration is 300s with fluid compute; 60s stays within that limit.
 export const config = {
@@ -71,7 +71,7 @@ async function handleProcessUpload(request: Request): Promise<Response> {
 
   const startedAt = Date.now()
   const body = await readBodyText(request)
-  if (!body.ok) return body.response
+  if (body.ok === false) return body.response
 
   const filename = request.headers.get('x-filename')?.trim() || 'upload.csv'
   const hash = fileSha256(body.text)

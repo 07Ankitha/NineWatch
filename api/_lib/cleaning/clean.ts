@@ -1,12 +1,12 @@
-import { parseCsv } from './parseCsv'
-import { parseLatency, parseStatusCode, parseTimestamp } from './normalize'
+import { parseCsv } from './parseCsv.js'
+import { parseLatency, parseStatusCode, parseTimestamp } from './normalize.js'
 import type {
   CleanCheck,
   CleaningIssue,
   CleaningResult,
   RawRow,
   TimestampKind,
-} from './types'
+} from './types.js'
 
 type Candidate = {
   check: CleanCheck

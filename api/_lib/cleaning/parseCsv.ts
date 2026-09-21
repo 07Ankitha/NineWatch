@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { RawRow } from './types'
+import type { RawRow } from './types.js'
 
 export const REQUIRED_HEADERS = [
   'service_id',
