@@ -1,3 +1,20 @@
+# NineWatch
+
+Turn messy uptime logs into trustworthy SLA numbers.
+
+## Running Locally / Redeploying
+
+The UI and API run in two terminals. Vite proxies `/api` to `vercel dev` on port 3000:
+
+```bash
+npm run dev        # Vite UI (http://localhost:5173)
+npm run dev:api    # API on http://localhost:3000
+```
+
+Keep both processes running while you upload CSVs from the UI.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
