@@ -1,4 +1,4 @@
-import { getStats, parseUploadIdParam } from './_lib/stats'
+import { getStats, parseUploadIdParam } from './_lib/stats.js'
 
 function jsonResponse(
   status: number,

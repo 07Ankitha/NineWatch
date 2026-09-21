@@ -1,4 +1,4 @@
-import { CHECK_INTERVAL_MINUTES, INCIDENT_MERGE_GAP_MINUTES } from './config'
+import { CHECK_INTERVAL_MINUTES, INCIDENT_MERGE_GAP_MINUTES } from './config.js'
 
 export type OutageSegment = {
   serviceId: string

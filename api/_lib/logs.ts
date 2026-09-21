@@ -1,5 +1,5 @@
-import { getDb } from './db'
-import { toNumber, toNumberOrNull } from './stats'
+import { getDb } from './db.js'
+import { toNumber, toNumberOrNull } from './stats.js'
 
 export const DEFAULT_PAGE = 1
 export const DEFAULT_PAGE_SIZE = 50
@@ -249,13 +249,13 @@ function queryRows(result: unknown): Array<Record<string, unknown>> {
 
 async function latestCompletedUploadId(): Promise<number | null> {
   const sql = getDb()
-  const rows = await sql<Record<string, unknown>>`
+  const rows = (await sql`
     SELECT id
     FROM uploads
     WHERE status = 'completed'
     ORDER BY uploaded_at DESC, id DESC
     LIMIT 1
-  `
+  `) as Array<Record<string, unknown>>
   const id = rows[0]?.id
   return id == null ? null : toNumber(id)
 }
@@ -292,11 +292,11 @@ export async function getLogs(query: LogsQuery): Promise<GetLogsResult> {
   }
 
   const sql = getDb()
-  const uploadRows = await sql<Record<string, unknown>>`
+  const uploadRows = (await sql`
     SELECT id, filename, data_start, data_end
     FROM uploads
     WHERE id = ${uploadId}
-  `
+  `) as Array<Record<string, unknown>>
   if (uploadRows.length === 0) return { status: 'not_found' }
   const upload = mapUpload(uploadRows[0])
 

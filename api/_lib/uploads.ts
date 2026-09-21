@@ -1,6 +1,6 @@
 import type { PoolClient } from '@neondatabase/serverless'
-import type { CleanCheck, CleaningIssue, CleaningResult } from './cleaning'
-import { getPool } from './db'
+import type { CleanCheck, CleaningIssue, CleaningResult } from './cleaning/index.js'
+import { getPool } from './db.js'
 
 const BATCH_SIZE = 5000
 
