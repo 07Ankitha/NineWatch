@@ -12,6 +12,7 @@ import SlaSummary from './SlaSummary.tsx'
 type StatsSectionProps = {
   uploadId?: number
   refreshKey: number
+  onServicesLoaded?: (services: Array<{ serviceId: string; serviceName: string }>) => void
 }
 
 function Skeleton() {
@@ -35,7 +36,11 @@ function periodLabel(start: string | null, end: string | null): string {
   return `${from} to ${to}`
 }
 
-export default function StatsSection({ uploadId, refreshKey }: StatsSectionProps) {
+export default function StatsSection({
+  uploadId,
+  refreshKey,
+  onServicesLoaded,
+}: StatsSectionProps) {
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [status, setStatus] = useState<'loading' | 'empty' | 'error' | 'ready'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +56,12 @@ export default function StatsSection({ uploadId, refreshKey }: StatsSectionProps
         if (controller.signal.aborted) return
         setStats(result)
         setStatus(result == null ? 'empty' : 'ready')
+        onServicesLoaded?.(
+          result?.services.map((service) => ({
+            serviceId: service.serviceId,
+            serviceName: service.serviceName,
+          })) ?? [],
+        )
       })
       .catch((caught: unknown) => {
         if (controller.signal.aborted) return
@@ -64,7 +75,7 @@ export default function StatsSection({ uploadId, refreshKey }: StatsSectionProps
       })
 
     return () => controller.abort()
-  }, [uploadId, refreshKey, retryToken])
+  }, [uploadId, refreshKey, retryToken, onServicesLoaded])
 
   if (status === 'loading') {
     return (

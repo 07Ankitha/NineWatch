@@ -353,3 +353,126 @@ export async function fetchStats(
 
   return parseStatsResponse(data)
 }
+
+export type LogsUpload = {
+  id: number
+  filename: string
+  dataStart: string | null
+  dataEnd: string | null
+}
+
+export type LogsRow = {
+  id: number
+  serviceId: string
+  serviceName: string
+  checkedAt: string
+  statusCode: number
+  isSuccess: boolean
+  latencyMs: number | null
+  agent: string
+  region: string
+}
+
+export type LogsResponse = {
+  upload: LogsUpload
+  filters: {
+    from: string | null
+    to: string | null
+    service: string | null
+    failuresOnly: boolean
+  }
+  rows: LogsRow[]
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export type FetchLogsParams = {
+  uploadId?: number
+  date?: string
+  from?: string
+  to?: string
+  service?: string
+  failuresOnly?: boolean
+  page?: number
+  pageSize?: number
+}
+
+const GENERIC_LOGS_ERROR = 'Failed to load logs. Please try again.'
+
+function parseLogsResponse(data: unknown): LogsResponse | null {
+  if (!isRecord(data)) throw new Error(GENERIC_LOGS_ERROR)
+  if (data.upload === null) return null
+  if (!isRecord(data.upload) || !isRecord(data.filters)) {
+    throw new Error(GENERIC_LOGS_ERROR)
+  }
+
+  const rows = data.rows
+  if (!Array.isArray(rows)) throw new Error(GENERIC_LOGS_ERROR)
+
+  return {
+    upload: {
+      id: readNumber(data.upload, 'id'),
+      filename: readString(data.upload, 'filename'),
+      dataStart: readStringOrNull(data.upload, 'dataStart'),
+      dataEnd: readStringOrNull(data.upload, 'dataEnd'),
+    },
+    filters: {
+      from: readStringOrNull(data.filters, 'from'),
+      to: readStringOrNull(data.filters, 'to'),
+      service: readStringOrNull(data.filters, 'service'),
+      failuresOnly: readBoolean(data.filters, 'failuresOnly'),
+    },
+    rows: rows.map((item) => {
+      if (!isRecord(item)) throw new Error(GENERIC_LOGS_ERROR)
+      return {
+        id: readNumber(item, 'id'),
+        serviceId: readString(item, 'serviceId'),
+        serviceName: readString(item, 'serviceName'),
+        checkedAt: readString(item, 'checkedAt'),
+        statusCode: readNumber(item, 'statusCode'),
+        isSuccess: readBoolean(item, 'isSuccess'),
+        latencyMs: readNumberOrNull(item, 'latencyMs'),
+        agent: readString(item, 'agent'),
+        region: readString(item, 'region'),
+      }
+    }),
+    page: readNumber(data, 'page'),
+    pageSize: readNumber(data, 'pageSize'),
+    total: readNumber(data, 'total'),
+    totalPages: readNumber(data, 'totalPages'),
+  }
+}
+
+export async function fetchLogs(
+  params: FetchLogsParams = {},
+  signal?: AbortSignal,
+): Promise<LogsResponse | null> {
+  const search = new URLSearchParams()
+  if (params.uploadId != null) search.set('uploadId', String(params.uploadId))
+  if (params.date) search.set('date', params.date)
+  if (params.from) search.set('from', params.from)
+  if (params.to) search.set('to', params.to)
+  if (params.service) search.set('service', params.service)
+  if (params.failuresOnly) search.set('failuresOnly', 'true')
+  if (params.page != null) search.set('page', String(params.page))
+  if (params.pageSize != null) search.set('pageSize', String(params.pageSize))
+
+  const query = search.toString()
+  const url = query === '' ? '/api/logs' : `/api/logs?${query}`
+  const response = await fetch(url, { signal })
+
+  let data: unknown
+  try {
+    data = await response.json()
+  } catch {
+    throw new Error(GENERIC_LOGS_ERROR)
+  }
+
+  if (!response.ok) {
+    throw new Error(errorFromPayload(data, GENERIC_LOGS_ERROR))
+  }
+
+  return parseLogsResponse(data)
+}

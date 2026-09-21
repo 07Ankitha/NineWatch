@@ -3,6 +3,7 @@ import {
   formatDateTime,
   formatDay,
   formatDuration,
+  formatLogTime,
   formatMs,
   formatNumber,
   formatPercent,
@@ -87,5 +88,13 @@ describe('formatMs', () => {
 describe('formatDay', () => {
   it('formats a UTC calendar day', () => {
     expect(formatDay('2025-04-03')).toBe('3 Apr')
+  })
+})
+
+describe('formatLogTime', () => {
+  it('includes seconds', () => {
+    expect(formatLogTime('2025-05-08T00:30:00.000Z')).toBe(
+      '8 May 2025, 00:30:00',
+    )
   })
 })

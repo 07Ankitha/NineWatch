@@ -34,6 +34,28 @@ export function formatDateTime(value: string | Date): string {
   return `${read('day')} ${read('month')} ${read('year')}, ${read('hour')}:${read('minute')} UTC`
 }
 
+export function formatLogTime(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Unknown'
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(date)
+
+  const read = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((part) => part.type === type)?.value ?? ''
+
+  return `${read('day')} ${read('month')} ${read('year')}, ${read('hour')}:${read('minute')}:${read('second')}`
+}
+
 export function formatPercent(value: number, decimals = 3): string {
   return `${value.toFixed(decimals)}%`
 }

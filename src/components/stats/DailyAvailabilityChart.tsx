@@ -86,7 +86,7 @@ export default function DailyAvailabilityChart({
                   value: `SLA ${formatPercent(slaTargetPct, 1)}`,
                   fill: '#d4d4d4',
                   fontSize: 11,
-                  position: 'insideTopRight',
+                  position: 'insideBottomLeft',
                 }}
               />
               {serviceIds.map((serviceId) => (
