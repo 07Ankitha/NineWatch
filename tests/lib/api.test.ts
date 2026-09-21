@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { uploadCsv } from '../../src/lib/api.ts'
+import { fetchStats, uploadCsv } from '../../src/lib/api.ts'
 import { validateCsvFile } from '../../src/components/upload/UploadCard.tsx'
 
 const summary = {
@@ -128,5 +128,75 @@ describe('uploadCsv', () => {
     await expect(uploadCsv(file)).rejects.toThrow(
       'Upload failed. Please try again.',
     )
+  })
+})
+
+const statsBody = {
+  upload: {
+    id: 8,
+    filename: 'log.csv',
+    uploadedAt: '2026-09-21T05:00:00.000Z',
+    dataStart: '2025-04-03T00:00:00.000Z',
+    dataEnd: '2025-04-23T23:45:00.000Z',
+    rowsReceived: 10,
+    rowsKept: 8,
+    rowsDropped: 2,
+  },
+  slaTargetPct: 99.9,
+  overall: {
+    totalChecks: 8,
+    failedChecks: 1,
+    availabilityPct: 87.5,
+    meetsSla: false,
+    allowedDowntimeMinutes: 12.96,
+    actualDowntimeMinutes: 15,
+  },
+  services: [],
+  outages: [],
+  errorBreakdown: [],
+  dailyAvailability: [],
+  dataQuality: { issueCounts: { duplicate_row: 2 } },
+}
+
+describe('fetchStats', () => {
+  it('GETs /api/stats and returns null when no upload is stored', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ upload: null }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchStats()).resolves.toBeNull()
+    expect(fetchMock).toHaveBeenCalledWith('/api/stats', expect.anything())
+  })
+
+  it('requests a specific uploadId and parses the body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => statsBody,
+      }),
+    )
+
+    const result = await fetchStats(8)
+    expect(result?.upload.id).toBe(8)
+    expect(result?.slaTargetPct).toBe(99.9)
+    expect(result?.dataQuality.issueCounts.duplicate_row).toBe(2)
+  })
+
+  it('throws the server error message on a non-2xx body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'Upload not found' }),
+      }),
+    )
+
+    await expect(fetchStats(99)).rejects.toThrow('Upload not found')
   })
 })

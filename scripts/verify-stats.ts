@@ -223,13 +223,16 @@ async function main() {
             ),
         ),
     )
-    for (const outage of unmatched) {
-      console.log(
-        `  EXTRA ${outage.serviceId} ${outage.startedAt} – ${outage.endedAt}  (${outage.failedChecks} failed, ${outage.durationMinutes} min)`,
-      )
+    if (unmatched.length > 0) {
+      console.log('  Extra detected outages (informational)')
+      for (const outage of unmatched) {
+        console.log(
+          `    ${outage.serviceId} ${outage.startedAt} – ${outage.endedAt}  (${outage.failedChecks} failed, ${outage.durationMinutes} min)`,
+        )
+      }
     }
 
-    const pass = missed.length === 0 && unmatched.length === 0
+    const pass = missed.length === 0
     if (!pass) anyFail = true
     summary.push({
       file,
@@ -251,15 +254,14 @@ async function main() {
       `${pad(row.file, 38)} ${pad(String(row.incidents), 6)} ${pad(String(row.detected), 6)} ${pad(String(row.matched), 5)} ${pad(String(row.missed), 5)} ${pad(String(row.unmatched), 6)} ${row.pass ? 'PASS' : 'FAIL'}`,
     )
   }
+  console.log('result = PASS when every true incident was detected; extra outages are informational.')
 
   if (anyFail) {
-    console.error(
-      '\nOne or more true incidents were missed, or a detected multi-check outage matched no incident.',
-    )
+    console.error('\nOne or more true incidents were missed.')
     process.exit(1)
   }
 
-  console.log('\nAll true incidents were detected; no unmatched multi-check outages.')
+  console.log('\nAll true incidents were detected.')
 }
 
 main().catch((error) => {

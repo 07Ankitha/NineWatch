@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatDateTime,
+  formatDay,
+  formatDuration,
+  formatMs,
   formatNumber,
+  formatPercent,
   humanizeIssueType,
 } from '../../src/lib/format.ts'
 
@@ -53,5 +57,35 @@ describe('humanizeIssueType', () => {
     expect(humanizeIssueType('naive_timestamp_assumed_utc')).toBe(
       'Naive Timestamp Assumed Utc',
     )
+  })
+})
+
+describe('formatPercent', () => {
+  it('uses 3 decimal places by default', () => {
+    expect(formatPercent(99.9)).toBe('99.900%')
+    expect(formatPercent(98.77)).toBe('98.770%')
+  })
+})
+
+describe('formatDuration', () => {
+  it('formats minutes, hours, and days', () => {
+    expect(formatDuration(45)).toBe('45 min')
+    expect(formatDuration(135)).toBe('2 h 15 min')
+    expect(formatDuration(60)).toBe('1 h')
+    expect(formatDuration(1620)).toBe('1 d 3 h')
+    expect(formatDuration(1440)).toBe('1 d')
+  })
+})
+
+describe('formatMs', () => {
+  it('uses ms below one second and seconds at or above', () => {
+    expect(formatMs(146)).toBe('146 ms')
+    expect(formatMs(1200)).toBe('1.2 s')
+  })
+})
+
+describe('formatDay', () => {
+  it('formats a UTC calendar day', () => {
+    expect(formatDay('2025-04-03')).toBe('3 Apr')
   })
 })
