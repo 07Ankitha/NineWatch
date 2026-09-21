@@ -153,6 +153,7 @@ const statsBody = {
   },
   services: [],
   outages: [],
+  incidents: [],
   errorBreakdown: [],
   dailyAvailability: [],
   dataQuality: { issueCounts: { duplicate_row: 2 } },

@@ -49,6 +49,18 @@ export type StatsOutage = {
   statusCodes: number[]
 }
 
+export type StatsIncident = {
+  serviceId: string
+  serviceName: string
+  startedAt: string
+  endedAt: string
+  windowMinutes: number
+  failedChecks: number
+  downtimeMinutes: number
+  segments: number
+  statusCodes: number[]
+}
+
 export type StatsErrorBreakdown = {
   serviceId: string
   statusCode: number
@@ -69,6 +81,7 @@ export type StatsResponse = {
   overall: StatsOverall
   services: StatsService[]
   outages: StatsOutage[]
+  incidents: StatsIncident[]
   errorBreakdown: StatsErrorBreakdown[]
   dailyAvailability: StatsDailyAvailability[]
   dataQuality: { issueCounts: Record<string, number> }
@@ -251,6 +264,20 @@ function mapOutageRow(row: Record<string, unknown>): OutageRow {
   }
 }
 
+function mapIncidentRow(row: Record<string, unknown>): StatsIncident {
+  return {
+    serviceId: requireString(row.service_id, 'service_id'),
+    serviceName: requireString(row.service_name, 'service_name'),
+    startedAt: toIso(row.started_at),
+    endedAt: toIso(row.ended_at),
+    windowMinutes: toNumber(row.window_minutes),
+    failedChecks: toNumber(row.failed_checks),
+    downtimeMinutes: toNumber(row.downtime_minutes),
+    segments: toNumber(row.segments),
+    statusCodes: toNumberArray(row.status_codes),
+  }
+}
+
 function mapErrorRow(row: Record<string, unknown>): StatsErrorBreakdown {
   return {
     serviceId: requireString(row.service_id, 'service_id'),
@@ -325,7 +352,7 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
   }
 
   const sql = getDb()
-  const [uploadRows, serviceRows, outageRows, errorRows, dailyRows, issueRows] =
+  const [uploadRows, serviceRows, outageRows, incidentRows, errorRows, dailyRows, issueRows] =
     await Promise.all([
       sql<Record<string, unknown>>`
         SELECT
@@ -343,6 +370,12 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
       sql<Record<string, unknown>>`
         SELECT *
         FROM v_outages
+        WHERE upload_id = ${id}
+        ORDER BY started_at DESC
+      `,
+      sql<Record<string, unknown>>`
+        SELECT *
+        FROM v_incidents
         WHERE upload_id = ${id}
         ORDER BY started_at DESC
       `,
@@ -377,18 +410,20 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
   if (uploadRows.length === 0) return { status: 'not_found' }
 
   const mappedOutages = outageRows.map(mapOutageRow)
-  const outageCountByService = new Map<string, number>()
+  const incidents = incidentRows.map(mapIncidentRow)
+  const incidentCountByService = new Map<string, number>()
   const isolatedCountByService = new Map<string, number>()
+  for (const incident of incidents) {
+    incidentCountByService.set(
+      incident.serviceId,
+      (incidentCountByService.get(incident.serviceId) ?? 0) + 1,
+    )
+  }
   for (const outage of mappedOutages) {
     if (outage.isIsolated) {
       isolatedCountByService.set(
         outage.serviceId,
         (isolatedCountByService.get(outage.serviceId) ?? 0) + 1,
-      )
-    } else {
-      outageCountByService.set(
-        outage.serviceId,
-        (outageCountByService.get(outage.serviceId) ?? 0) + 1,
       )
     }
   }
@@ -397,7 +432,7 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
     const serviceId = requireString(row.service_id, 'service_id')
     return mapServiceRow(
       row,
-      outageCountByService.get(serviceId) ?? 0,
+      incidentCountByService.get(serviceId) ?? 0,
       isolatedCountByService.get(serviceId) ?? 0,
     )
   })
@@ -422,6 +457,7 @@ export async function getStats(uploadId?: number): Promise<GetStatsResult> {
       overall: buildOverall(services),
       services,
       outages,
+      incidents,
       errorBreakdown: errorRows.map(mapErrorRow),
       dailyAvailability: dailyRows.map(mapDailyRow),
       dataQuality: { issueCounts: issueCountsFromRows(issueRows) },

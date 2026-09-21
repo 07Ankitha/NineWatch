@@ -137,7 +137,7 @@ export default function StatsSection({
         <LatencyChart services={stats.services} />
       </div>
 
-      <OutagesTable outages={stats.outages} />
+      <OutagesTable incidents={stats.incidents} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ErrorBreakdown errorBreakdown={stats.errorBreakdown} />

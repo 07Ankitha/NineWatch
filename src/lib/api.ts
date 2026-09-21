@@ -62,6 +62,18 @@ export type StatsOutage = {
   statusCodes: number[]
 }
 
+export type StatsIncident = {
+  serviceId: string
+  serviceName: string
+  startedAt: string
+  endedAt: string
+  windowMinutes: number
+  failedChecks: number
+  downtimeMinutes: number
+  segments: number
+  statusCodes: number[]
+}
+
 export type StatsErrorBreakdown = {
   serviceId: string
   statusCode: number
@@ -82,6 +94,7 @@ export type StatsResponse = {
   overall: StatsOverall
   services: StatsService[]
   outages: StatsOutage[]
+  incidents: StatsIncident[]
   errorBreakdown: StatsErrorBreakdown[]
   dailyAvailability: StatsDailyAvailability[]
   dataQuality: { issueCounts: Record<string, number> }
@@ -301,6 +314,24 @@ function parseStatsOutage(value: Record<string, unknown>): StatsOutage {
   }
 }
 
+function parseStatsIncident(value: Record<string, unknown>): StatsIncident {
+  const codes = value.statusCodes
+  if (!Array.isArray(codes) || codes.some((code) => typeof code !== 'number')) {
+    throw new Error(GENERIC_STATS_ERROR)
+  }
+  return {
+    serviceId: readString(value, 'serviceId'),
+    serviceName: readString(value, 'serviceName'),
+    startedAt: readString(value, 'startedAt'),
+    endedAt: readString(value, 'endedAt'),
+    windowMinutes: readNumber(value, 'windowMinutes'),
+    failedChecks: readNumber(value, 'failedChecks'),
+    downtimeMinutes: readNumber(value, 'downtimeMinutes'),
+    segments: readNumber(value, 'segments'),
+    statusCodes: codes,
+  }
+}
+
 function parseStatsResponse(data: unknown): StatsResponse | null {
   if (!isRecord(data)) throw new Error(GENERIC_STATS_ERROR)
   if (data.upload === null) return null
@@ -316,6 +347,7 @@ function parseStatsResponse(data: unknown): StatsResponse | null {
     overall: parseStatsOverall(data.overall),
     services: readRecords(data.services).map(parseStatsService),
     outages: readRecords(data.outages).map(parseStatsOutage),
+    incidents: readRecords(data.incidents).map(parseStatsIncident),
     errorBreakdown: readRecords(data.errorBreakdown).map((row) => ({
       serviceId: readString(row, 'serviceId'),
       statusCode: readNumber(row, 'statusCode'),
