@@ -168,26 +168,26 @@ async function main() {
   let anyFail = false
 
   for (const file of csvFiles) {
-    const incidents = loadIncidents(log, file)
+    const trueIncidents = loadIncidents(log, file)
     const uploadId = await ensureUpload(join(sampleDir, file))
     const result = await getStats(uploadId)
     if (result.status !== 'ok') {
       throw new Error(`getStats(${uploadId}) returned ${result.status}`)
     }
 
-    const detected = result.body.outages
+    const detected = result.body.incidents
     const missed: TrueIncident[] = []
     let matchedIncidents = 0
 
     console.log(`\n${file} (upload #${uploadId})`)
 
-    for (const incident of incidents) {
+    for (const incident of trueIncidents) {
       const overlapping = detected.filter(
-        (outage) =>
-          outage.serviceId === incident.serviceId &&
+        (row) =>
+          row.serviceId === incident.serviceId &&
           overlaps(
-            new Date(outage.startedAt),
-            new Date(outage.endedAt),
+            new Date(row.startedAt),
+            new Date(row.endedAt),
             incident.windowStart,
             incident.windowEnd,
           ),
@@ -203,31 +203,31 @@ async function main() {
       console.log(
         `  HIT   ${incident.key}  ${fmt(incident.windowStart)} – ${fmt(incident.windowEnd)}  (${incident.raw})`,
       )
-      for (const outage of overlapping) {
+      for (const row of overlapping) {
         console.log(
-          `        outage ${outage.serviceId} ${outage.startedAt} – ${outage.endedAt}  (${outage.failedChecks} failed, ${outage.durationMinutes} min)`,
+          `        incident ${row.serviceId} ${row.startedAt} – ${row.endedAt}  (${row.failedChecks} failed, ${row.downtimeMinutes} min downtime, ${row.segments} segment${row.segments === 1 ? '' : 's'})`,
         )
       }
     }
 
     const unmatched = detected.filter(
-      (outage) =>
-        !incidents.some(
+      (row) =>
+        !trueIncidents.some(
           (incident) =>
-            incident.serviceId === outage.serviceId &&
+            incident.serviceId === row.serviceId &&
             overlaps(
-              new Date(outage.startedAt),
-              new Date(outage.endedAt),
+              new Date(row.startedAt),
+              new Date(row.endedAt),
               incident.windowStart,
               incident.windowEnd,
             ),
         ),
     )
     if (unmatched.length > 0) {
-      console.log('  Extra detected outages (informational)')
-      for (const outage of unmatched) {
+      console.log('  Extra detected incidents (informational)')
+      for (const row of unmatched) {
         console.log(
-          `    ${outage.serviceId} ${outage.startedAt} – ${outage.endedAt}  (${outage.failedChecks} failed, ${outage.durationMinutes} min)`,
+          `    ${row.serviceId} ${row.startedAt} – ${row.endedAt}  (${row.failedChecks} failed, ${row.downtimeMinutes} min downtime, ${row.segments} segment${row.segments === 1 ? '' : 's'})`,
         )
       }
     }
@@ -236,7 +236,7 @@ async function main() {
     if (!pass) anyFail = true
     summary.push({
       file,
-      incidents: incidents.length,
+      incidents: trueIncidents.length,
       detected: detected.length,
       matched: matchedIncidents,
       unmatched: unmatched.length,
@@ -254,7 +254,9 @@ async function main() {
       `${pad(row.file, 38)} ${pad(String(row.incidents), 6)} ${pad(String(row.detected), 6)} ${pad(String(row.matched), 5)} ${pad(String(row.missed), 5)} ${pad(String(row.unmatched), 6)} ${row.pass ? 'PASS' : 'FAIL'}`,
     )
   }
-  console.log('result = PASS when every true incident was detected; extra outages are informational.')
+  console.log(
+    'result = PASS when every true incident was detected; extra incidents are informational.',
+  )
 
   if (anyFail) {
     console.error('\nOne or more true incidents were missed.')
