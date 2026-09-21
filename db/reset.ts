@@ -35,9 +35,9 @@ async function reset() {
   try {
     await client.connect()
     await client.query(`
-      DROP TABLE IF EXISTS checks, data_issues, uploads, schema_migrations
+      DROP TABLE IF EXISTS checks, data_issues, uploads, schema_migrations CASCADE
     `)
-    console.log('Dropped public schema objects: checks, data_issues, uploads, schema_migrations.')
+    console.log('Dropped public schema objects: checks, data_issues, uploads, schema_migrations (CASCADE).')
   } finally {
     await client.end()
   }
