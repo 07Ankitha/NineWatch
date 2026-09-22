@@ -1,4 +1,5 @@
 import type { ServiceOption } from '../../lib/logsView.ts'
+import { LOGS_UTC_NOTE } from '../../lib/copy.ts'
 import { isStartAfterEnd } from '../../lib/logsView.ts'
 
 type DateMode = 'single' | 'range'
@@ -25,7 +26,7 @@ type LogsFilterBarProps = {
 }
 
 const fieldClass =
-  'rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900'
+  'min-h-11 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 sm:w-auto'
 
 export default function LogsFilterBar({
   dateMode,
@@ -49,17 +50,17 @@ export default function LogsFilterBar({
 }: LogsFilterBarProps) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-end gap-3">
-        <fieldset className="space-y-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <fieldset className="w-full space-y-1 sm:w-auto">
           <legend className="text-xs font-medium text-neutral-400">Date mode</legend>
-          <div className="flex rounded-lg border border-neutral-700 p-0.5">
+          <div className="flex min-h-11 rounded-lg border border-neutral-700 p-0.5">
             {(['single', 'range'] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
                 aria-pressed={dateMode === mode}
                 onClick={() => onDateMode(mode)}
-                className={`rounded-md px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
+                className={`min-h-10 flex-1 rounded-md px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:flex-none ${
                   dateMode === mode
                     ? 'bg-neutral-700 text-neutral-50'
                     : 'text-neutral-400 hover:text-neutral-200'
@@ -72,7 +73,7 @@ export default function LogsFilterBar({
         </fieldset>
 
         {dateMode === 'single' ? (
-          <label className="space-y-1 text-sm">
+          <label className="w-full space-y-1 text-sm sm:w-auto">
             <span className="block text-xs font-medium text-neutral-400">Day (UTC)</span>
             <input
               type="date"
@@ -85,7 +86,7 @@ export default function LogsFilterBar({
           </label>
         ) : (
           <>
-            <label className="space-y-1 text-sm">
+            <label className="w-full space-y-1 text-sm sm:w-auto">
               <span className="block text-xs font-medium text-neutral-400">From (UTC)</span>
               <input
                 type="date"
@@ -96,7 +97,7 @@ export default function LogsFilterBar({
                 className={fieldClass}
               />
             </label>
-            <label className="space-y-1 text-sm">
+            <label className="w-full space-y-1 text-sm sm:w-auto">
               <span className="block text-xs font-medium text-neutral-400">To (UTC)</span>
               <input
                 type="date"
@@ -110,7 +111,7 @@ export default function LogsFilterBar({
           </>
         )}
 
-        <label className="space-y-1 text-sm">
+        <label className="w-full space-y-1 text-sm sm:w-auto">
           <span className="block text-xs font-medium text-neutral-400">Service</span>
           <select
             value={service}
@@ -126,26 +127,26 @@ export default function LogsFilterBar({
           </select>
         </label>
 
-        <label className="flex items-center gap-2 pb-2 text-sm text-neutral-200">
+        <label className="flex min-h-11 w-full items-center gap-3 text-sm text-neutral-200 sm:w-auto">
           <input
             type="checkbox"
             checked={failuresOnly}
             onChange={(event) => onFailuresOnly(event.target.checked)}
-            className="h-4 w-4 rounded border-neutral-600 bg-neutral-900 text-sky-500 focus-visible:ring-2 focus-visible:ring-sky-400"
+            className="h-5 w-5 rounded border-neutral-600 bg-neutral-900 text-sky-500 focus-visible:ring-2 focus-visible:ring-sky-400"
           />
-          Failures only
+          Show only failed checks
         </label>
 
         <button
           type="button"
           disabled={!filtered}
           onClick={onClear}
-          className="rounded-lg border border-neutral-600 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+          className="min-h-11 w-full rounded-lg border border-neutral-600 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
         >
           Clear filters
         </button>
       </div>
-      <p className="text-xs text-neutral-500">Dates are in UTC</p>
+      <p className="text-xs text-neutral-400">{LOGS_UTC_NOTE}</p>
       {rangeError && (
         <p role="alert" className="text-sm text-red-400">
           {rangeError}

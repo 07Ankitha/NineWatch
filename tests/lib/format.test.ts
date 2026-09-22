@@ -38,19 +38,27 @@ describe('formatDateTime', () => {
 
 describe('humanizeIssueType', () => {
   it('maps known cleaning issue types', () => {
-    expect(humanizeIssueType('duplicate_row')).toBe('Duplicate rows removed')
-    expect(humanizeIssueType('missing_latency')).toBe('Missing latency values')
-    expect(humanizeIssueType('negative_latency')).toBe('Negative latency values')
-    expect(humanizeIssueType('invalid_status')).toBe('Invalid status codes')
+    expect(humanizeIssueType('duplicate_row')).toBe('Duplicate records removed')
+    expect(humanizeIssueType('missing_latency')).toBe(
+      'Records with no speed value (kept, speed left blank)',
+    )
+    expect(humanizeIssueType('negative_latency')).toBe(
+      'Records with an impossible negative speed (kept, speed left blank)',
+    )
+    expect(humanizeIssueType('invalid_status')).toBe(
+      'Records with an impossible status code removed',
+    )
     expect(humanizeIssueType('unit_converted')).toBe(
-      'Latency converted from seconds to ms',
+      'Speed values in seconds were converted to milliseconds',
     )
     expect(humanizeIssueType('timezone_normalized')).toBe(
-      'Timestamps with timezone offset converted to UTC',
+      'Times in other time zones were converted to UTC',
     )
-    expect(humanizeIssueType('epoch_converted')).toBe('Unix timestamps converted')
+    expect(humanizeIssueType('epoch_converted')).toBe(
+      'Times in a different format were standardized',
+    )
     expect(humanizeIssueType('conflicting_duplicate')).toBe(
-      'Conflicting duplicates resolved',
+      'Conflicting duplicate records resolved (failure kept)',
     )
   })
 

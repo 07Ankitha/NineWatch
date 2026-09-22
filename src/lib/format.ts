@@ -1,12 +1,12 @@
 const ISSUE_LABELS: Record<string, string> = {
-  duplicate_row: 'Duplicate rows removed',
-  missing_latency: 'Missing latency values',
-  negative_latency: 'Negative latency values',
-  invalid_status: 'Invalid status codes',
-  unit_converted: 'Latency converted from seconds to ms',
-  timezone_normalized: 'Timestamps with timezone offset converted to UTC',
-  epoch_converted: 'Unix timestamps converted',
-  conflicting_duplicate: 'Conflicting duplicates resolved',
+  duplicate_row: 'Duplicate records removed',
+  missing_latency: 'Records with no speed value (kept, speed left blank)',
+  negative_latency: 'Records with an impossible negative speed (kept, speed left blank)',
+  invalid_status: 'Records with an impossible status code removed',
+  unit_converted: 'Speed values in seconds were converted to milliseconds',
+  timezone_normalized: 'Times in other time zones were converted to UTC',
+  epoch_converted: 'Times in a different format were standardized',
+  conflicting_duplicate: 'Conflicting duplicate records resolved (failure kept)',
 }
 
 export function formatNumber(value: number): string {

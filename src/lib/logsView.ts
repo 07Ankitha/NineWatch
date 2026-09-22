@@ -1,3 +1,4 @@
+import { describeStatus } from './copy.ts'
 import { formatNumber } from './format.ts'
 
 export type ServiceOption = {
@@ -6,7 +7,8 @@ export type ServiceOption = {
 }
 
 export function formatStatus(statusCode: number, isSuccess: boolean): string {
-  return `${statusCode} ${isSuccess ? 'OK' : 'Error'}`
+  if (isSuccess) return 'OK'
+  return describeStatus(statusCode)
 }
 
 export function showingChecksLabel(

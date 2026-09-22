@@ -1,6 +1,6 @@
 import type { LogsRow } from '../../lib/api.ts'
+import { describeStatus } from '../../lib/copy.ts'
 import { formatLogTime, formatMs } from '../../lib/format.ts'
-import { formatStatus } from '../../lib/logsView.ts'
 
 type LogsTableProps = {
   rows: LogsRow[]
@@ -39,17 +39,21 @@ function StatusIcon({ ok }: { ok: boolean }) {
 
 export default function LogsTable({ rows, dimmed = false }: LogsTableProps) {
   return (
-    <div className={`max-h-[32rem] overflow-auto rounded-xl border border-neutral-800 ${dimmed ? 'opacity-50' : ''}`}>
+    <div
+      className={`overflow-auto rounded-xl border border-neutral-800 max-sm:max-h-none sm:max-h-[32rem] ${
+        dimmed ? 'opacity-50' : ''
+      }`}
+    >
       <table className="min-w-full text-left text-sm" aria-label="Uptime checks">
         <caption className="sr-only">Uptime checks for the selected filters</caption>
         <thead className="sticky top-0 z-10 bg-neutral-950">
-          <tr className="border-b border-neutral-800 text-neutral-500">
+          <tr className="border-b border-neutral-800 text-neutral-400">
             <th className="whitespace-nowrap px-3 py-2 font-medium">Time (UTC)</th>
             <th className="whitespace-nowrap px-3 py-2 font-medium">Service</th>
-            <th className="whitespace-nowrap px-3 py-2 font-medium">Status</th>
-            <th className="whitespace-nowrap px-3 py-2 font-medium">Latency</th>
-            <th className="whitespace-nowrap px-3 py-2 font-medium">Agent</th>
-            <th className="whitespace-nowrap px-3 py-2 font-medium">Region</th>
+            <th className="whitespace-nowrap px-3 py-2 font-medium">Result</th>
+            <th className="whitespace-nowrap px-3 py-2 font-medium">Response time</th>
+            <th className="whitespace-nowrap px-3 py-2 font-medium">Checked by</th>
+            <th className="whitespace-nowrap px-3 py-2 font-medium">Location</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +64,7 @@ export default function LogsTable({ rows, dimmed = false }: LogsTableProps) {
               </td>
               <td className="whitespace-nowrap px-3 py-2">
                 <span className="text-neutral-100">{row.serviceName}</span>
-                <span className="ml-2 text-xs text-neutral-500">{row.serviceId}</span>
+                <span className="ml-2 text-xs text-neutral-400">{row.serviceId}</span>
               </td>
               <td className="whitespace-nowrap px-3 py-2">
                 <span
@@ -71,14 +75,17 @@ export default function LogsTable({ rows, dimmed = false }: LogsTableProps) {
                   }`}
                 >
                   <StatusIcon ok={row.isSuccess} />
-                  {formatStatus(row.statusCode, row.isSuccess)}
+                  {row.isSuccess ? 'OK' : describeStatus(row.statusCode)}
+                  <span className="font-normal tabular-nums text-neutral-400">
+                    {row.statusCode}
+                  </span>
                 </span>
               </td>
               <td className="whitespace-nowrap px-3 py-2 tabular-nums text-neutral-200">
                 {row.latencyMs == null ? (
                   <span
-                    className="text-neutral-500"
-                    title="Latency was blank or invalid in the source file"
+                    className="text-neutral-400"
+                    title="Response time was blank or invalid in the source file"
                   >
                     —
                   </span>
