@@ -6,6 +6,7 @@ import DataQualityNote from './DataQualityNote.tsx'
 import ErrorBreakdown from './ErrorBreakdown.tsx'
 import LatencyChart from './LatencyChart.tsx'
 import OutagesTable from './OutagesTable.tsx'
+import PlainSummary from './PlainSummary.tsx'
 import ServiceCards from './ServiceCards.tsx'
 import SlaSummary from './SlaSummary.tsx'
 
@@ -19,6 +20,7 @@ function Skeleton() {
   return (
     <div className="animate-pulse space-y-4" aria-hidden="true">
       <div className="h-4 w-2/3 rounded bg-neutral-800" />
+      <div className="h-20 rounded-xl bg-neutral-800/80" />
       <div className="h-28 rounded-xl bg-neutral-800/80" />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="h-40 rounded-xl bg-neutral-800/80" />
@@ -99,7 +101,7 @@ export default function StatsSection({
         <button
           type="button"
           onClick={() => setRetryToken((token) => token + 1)}
-          className="mt-3 rounded-lg border border-red-400/50 bg-red-900/60 px-3 py-1.5 text-sm font-medium text-red-50 transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+          className="mt-3 min-h-11 rounded-lg border border-red-400/50 bg-red-900/60 px-3 py-2 text-sm font-medium text-red-50 transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
         >
           Retry
         </button>
@@ -109,38 +111,41 @@ export default function StatsSection({
 
   if (status === 'empty' || stats == null) {
     return (
-      <p className="text-sm text-neutral-400" aria-live="polite">
+      <p className="text-sm text-neutral-300" aria-live="polite">
         No data yet. Upload a CSV above.
       </p>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <p className="text-sm text-neutral-300" aria-live="polite">
         <span className="font-medium text-neutral-100">{stats.upload.filename}</span>
-        <span className="text-neutral-500"> · </span>
+        <span className="text-neutral-400"> · </span>
         {periodLabel(stats.upload.dataStart, stats.upload.dataEnd)}
-        <span className="text-neutral-500"> · </span>
+        <span className="text-neutral-400"> · </span>
         Rows kept {formatNumber(stats.upload.rowsKept)} of{' '}
         {formatNumber(stats.upload.rowsReceived)}
       </p>
 
+      <PlainSummary stats={stats} />
       <SlaSummary overall={stats.overall} slaTargetPct={stats.slaTargetPct} />
       <ServiceCards services={stats.services} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DailyAvailabilityChart
-          dailyAvailability={stats.dailyAvailability}
-          slaTargetPct={stats.slaTargetPct}
-        />
-        <LatencyChart services={stats.services} />
-      </div>
+      <DailyAvailabilityChart
+        dailyAvailability={stats.dailyAvailability}
+        slaTargetPct={stats.slaTargetPct}
+        services={stats.services}
+      />
+      <LatencyChart services={stats.services} />
 
       <OutagesTable incidents={stats.incidents} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ErrorBreakdown errorBreakdown={stats.errorBreakdown} />
+        <ErrorBreakdown
+          errorBreakdown={stats.errorBreakdown}
+          services={stats.services}
+        />
         <DataQualityNote issueCounts={stats.dataQuality.issueCounts} />
       </div>
     </div>

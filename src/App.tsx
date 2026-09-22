@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
+import HowToRead from './components/HowToRead.tsx'
 import LogsSection from './components/logs/LogsSection.tsx'
 import StatsSection from './components/stats/StatsSection.tsx'
 import UploadCard from './components/upload/UploadCard.tsx'
 import type { UploadResult } from './lib/api.ts'
+import { APP_SUBTITLE } from './lib/copy.ts'
 import type { ServiceOption } from './lib/logsView.ts'
 
 function Chevron({ open }: { open: boolean }) {
@@ -41,16 +43,16 @@ function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen overflow-x-hidden bg-neutral-950 text-neutral-100">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
         <header>
           <h1 className="text-3xl font-semibold tracking-tight text-neutral-50 sm:text-4xl">
             NineWatch
           </h1>
-          <p className="mt-2 max-w-2xl text-base text-neutral-400">
-            Turn messy uptime logs into trustworthy SLA numbers.
-          </p>
+          <p className="mt-2 max-w-2xl text-base text-neutral-300">{APP_SUBTITLE}</p>
         </header>
+
+        <HowToRead />
 
         <UploadCard onUploaded={handleUploaded} />
 
@@ -60,7 +62,7 @@ function App() {
               type="button"
               aria-expanded={statsOpen}
               onClick={() => setStatsOpen((open) => !open)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg text-left text-lg font-semibold tracking-tight text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-left text-lg font-semibold tracking-tight text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
             >
               SLA Stats
               <Chevron open={statsOpen} />
@@ -81,7 +83,7 @@ function App() {
               type="button"
               aria-expanded={logsOpen}
               onClick={() => setLogsOpen((open) => !open)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg text-left text-lg font-semibold tracking-tight text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-left text-lg font-semibold tracking-tight text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
             >
               Check Logs
               <Chevron open={logsOpen} />

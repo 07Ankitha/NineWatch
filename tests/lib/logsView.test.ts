@@ -6,9 +6,9 @@ import {
 } from '../../src/lib/logsView.ts'
 
 describe('formatStatus', () => {
-  it('labels 2xx as OK and others as Error', () => {
-    expect(formatStatus(200, true)).toBe('200 OK')
-    expect(formatStatus(503, false)).toBe('503 Error')
+  it('labels success as OK and failures with a plain status name', () => {
+    expect(formatStatus(200, true)).toBe('OK')
+    expect(formatStatus(503, false)).toBe('Service unavailable')
   })
 })
 
