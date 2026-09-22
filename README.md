@@ -7,6 +7,8 @@ NineWatch is a full-stack app that checks whether services kept their uptime pro
 **Live app:** https://nine-watch.vercel.app/
 **Repo:** https://github.com/07Ankitha/NineWatch
 
+**Last verified live:** <fill in the date you last checked it, e.g. "22 Sep 2026, by uploading a file end-to-end on the deployed URL">. The database is on a free tier and can pause after a period of inactivity; the first request after that will just take a little longer while it wakes up. See *Redeploying* below if it ever needs to be brought back up.
+
 ---
 
 ## What problem this solves
@@ -142,6 +144,15 @@ Produced by the automated integration test that runs the cleaner over all five s
 | Saving | One database transaction, with batched inserts, so a failed upload never leaves the database half-written. |
 | Upload size limit | 4 MB. Vercel accepts roughly 4.5 MB per request; the largest sample file is about 1.2 MB. |
 | Authentication | Out of scope for this exercise, per the assignment brief. Everyone who opens the app sees the same shared data. |
+
+### Why these stats
+
+I picked what to show with two readers in mind, since the brief asks for that judgment call rather than a fixed checklist:
+
+- **Someone on-call** wants to know *what broke, when, and for how long*. The plain-language headline, the incidents table (grouped so a flapping service reads as one problem, not five) and the daily availability chart answer that directly.
+- **Someone in billing** wants to know *did we breach the SLA, and by how much*. The overall availability %, the allowed-vs-actual downtime, and the "Xx over the allowance" line answer that directly — that's the number that would actually trigger a credit.
+- **Speed (p50/p95) and the error breakdown** are secondary, included for diagnosing *why* something broke once you already know *what* and *when* from the sections above.
+- **Isolated one-off failures are shown separately from incidents** so a single blip doesn't get reported with the same weight as a sustained outage, while still counting toward the availability percentage.
 
 ---
 
