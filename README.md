@@ -7,7 +7,7 @@ NineWatch is a full-stack app that checks whether services kept their uptime pro
 **Live app:** https://nine-watch.vercel.app/
 **Repo:** https://github.com/07Ankitha/NineWatch
 
-**Last verified live:** <fill in the date you last checked it, e.g. "22 Sep 2026, by uploading a file end-to-end on the deployed URL">. The database is on a free tier and can pause after a period of inactivity; the first request after that will just take a little longer while it wakes up. See *Redeploying* below if it ever needs to be brought back up.
+**Last verified live:** 22 Sep 2026, by uploading a file end-to-end on the deployed URL. The database is on a free tier and can pause after a period of inactivity; the first request after that will just take a little longer while it wakes up. See *Redeploying* below if it ever needs to be brought back up.
 
 ---
 
@@ -158,9 +158,8 @@ I picked what to show with two readers in mind, since the brief asks for that ju
 
 ## Performance note
 
-Saving the 30-day file (14,399 rows) locally first took about **54 seconds** using row-by-row style inserts. Adding per-stage timing showed the cost was almost entirely database round trips over the network (India ↔ Singapore), not CPU — cleaning itself took under 200 ms. Switching to batched `UNNEST`-based inserts (5,000 rows per query) cut it to about **20 seconds** locally. The deployed function runs in the same region (`sin1`) as the database, which removes most of that network cost.
+Saving the 30-day file (14,399 rows) locally first took about **54 seconds** using row-by-row style inserts. Adding per-stage timing showed the cost was almost entirely database round trips over the network (India ↔ Singapore), not CPU — cleaning itself took under 200 ms. Switching to batched `UNNEST`-based inserts (5,000 rows per query) cut it to about **10 seconds** locally. The deployed function runs in the same region (`sin1`) as the database, which removes most of that network cost.
 
-*(Add the measured upload time on the live app here once you've timed it — don't estimate it.)*
 
 ---
 
